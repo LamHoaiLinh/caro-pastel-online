@@ -23,7 +23,6 @@ func SearchPosition(
 ) (int, int, SearchStats) {
 	sb := NewSearchBoard(b)
 	candidates := GetCandidates(&sb, domain.MaxSearchRadius)
-	candidates = FilterOpenRule(candidates, &sb, player)
 
 	if len(candidates) == 0 {
 		return -1, -1, SearchStats{}
@@ -267,7 +266,6 @@ func alphaBeta(
 	}
 
 	candidates := GetCandidates(sb, domain.MaxSearchRadius)
-	candidates = FilterOpenRule(candidates, sb, player)
 	var ttMove *domain.Position
 	if entry, ok := tt.Lookup(sb.Hash()); ok {
 		ttMove = &domain.Position{X: int(entry.MoveX), Y: int(entry.MoveY)}
@@ -432,7 +430,7 @@ func adjustMateScoreForRetrieve(storedScore int, plyFromRoot int) int {
 	if storedScore >= domain.WinScore-domain.AbsoluteMaxDepth+1 {
 		return storedScore - plyFromRoot
 	}
-	if storedScore <= -(domain.WinScore - domain.AbsoluteMaxDepth) - 1 {
+	if storedScore <= -(domain.WinScore-domain.AbsoluteMaxDepth)-1 {
 		return storedScore + plyFromRoot
 	}
 	return storedScore

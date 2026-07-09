@@ -6,7 +6,6 @@
 		y: number;
 		player: Player;
 		isLastMove?: boolean;
-		isOpenRuleInvalid?: boolean;
 		cellSize: number;
 		interactive?: boolean;
 		onclick?: () => void;
@@ -18,7 +17,6 @@
 		y,
 		player,
 		isLastMove = false,
-		isOpenRuleInvalid = false,
 		cellSize,
 		interactive = true,
 		onclick,
@@ -30,7 +28,7 @@
 	onclick={onclick}
 	onkeydown={onkeydown}
 	disabled={!interactive || player !== 'none'}
-	class="caro-cell {isLastMove ? 'last-move' : ''} {isOpenRuleInvalid ? 'open-rule-invalid' : ''}"
+	class="caro-cell {isLastMove ? 'last-move' : ''}"
 	style="width: {cellSize}px; height: {cellSize}px; min-width: {cellSize}px; min-height: {cellSize}px; font-size: {cellSize * 0.56}px;"
 	aria-label="Ô {x + 1},{y + 1}"
 	data-x={x}
@@ -62,10 +60,6 @@
 	.caro-cell.last-move {
 		background: rgba(255, 236, 174, 0.92);
 		box-shadow: inset 0 0 0 2px rgba(204, 151, 36, 0.54);
-	}
-	.caro-cell.open-rule-invalid {
-		background: rgba(255, 224, 224, 0.65);
-		opacity: 0.58;
 	}
 	.stone {
 		display: inline-flex;

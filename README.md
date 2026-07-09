@@ -1,6 +1,6 @@
 # Caro Pastel Online
 
-Phiên bản nâng cấp giao diện xanh lá pastel cho game Caro 16×16, tối ưu để chơi trên điện thoại và máy tính.
+Phiên bản 8.1 giao diện xanh lá pastel cho game Caro 16×16, tối ưu để chơi trên điện thoại và máy tính.
 
 ## Tính năng chính
 

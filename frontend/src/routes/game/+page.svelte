@@ -47,27 +47,6 @@
 	let onlineConnected = $state(false);
 	let pollTimer: ReturnType<typeof setInterval> | null = null;
 
-	const openRuleInvalid = $derived(() => {
-		if (store.currentPlayer !== 'red' || store.moveNumber !== 1) return new Set<string>();
-		let redCount = 0;
-		let blueCount = 0;
-		let firstRedX = 0;
-		let firstRedY = 0;
-		for (const cell of store.board) {
-			if (cell.player === 'red') {
-				redCount++;
-				firstRedX = cell.x;
-				firstRedY = cell.y;
-			} else if (cell.player === 'blue') blueCount++;
-		}
-		if (redCount !== 1 || blueCount > 1) return new Set<string>();
-		const invalid = new Set<string>();
-		for (const cell of store.board) {
-			if (cell.player !== 'none') continue;
-			if (Math.abs(cell.x - firstRedX) < 3 && Math.abs(cell.y - firstRedY) < 3) invalid.add(`${cell.x},${cell.y}`);
-		}
-		return invalid;
-	});
 
 	const boardInteractive = $derived(() => {
 		if (store.isGameOver || moveInProgress || isAiThinking) return false;
@@ -577,7 +556,7 @@
 		</div>
 
 		<PlayerTimerStrip player="blue" timeRemaining={blueTime} isActive={(playMode !== 'online' || opponentJoined) && store.currentPlayer === 'blue' && !store.isGameOver} onTimeOut={() => handleTimeOut('blue')} label={aiLabel('blue')} />
-		<Board board={store.board} onMove={handleMove} {winningLine} {lastMove} openRuleInvalid={openRuleInvalid()} interactive={boardInteractive()} />
+		<Board board={store.board} onMove={handleMove} {winningLine} {lastMove} interactive={boardInteractive()} />
 		<PlayerTimerStrip player="red" timeRemaining={redTime} isActive={(playMode !== 'online' || opponentJoined) && store.currentPlayer === 'red' && !store.isGameOver} onTimeOut={() => handleTimeOut('red')} label={aiLabel('red')} />
 		<MoveNotation moves={store.moveHistory} currentMoveNumber={store.moveNumber} />
 	</div>

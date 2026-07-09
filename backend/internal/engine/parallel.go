@@ -27,7 +27,6 @@ func ParallelSearch(
 
 	sb := NewSearchBoard(b)
 	candidates := GetCandidates(&sb, domain.MaxSearchRadius)
-	candidates = FilterOpenRule(candidates, &sb, player)
 	if len(candidates) <= 1 {
 		if len(candidates) == 1 {
 			return candidates[0].X, candidates[0].Y, SearchStats{ThreadCount: numWorkers}

@@ -12,7 +12,6 @@
 		onMove: (x: number, y: number) => void;
 		winningLine?: Array<{ x: number; y: number }>;
 		lastMove?: { x: number; y: number } | null;
-		openRuleInvalid?: Set<string>;
 		interactive?: boolean;
 	}
 
@@ -21,7 +20,6 @@
 		onMove,
 		winningLine = [],
 		lastMove = null,
-		openRuleInvalid = new Set<string>(),
 		interactive = true
 	}: Props = $props();
 
@@ -90,13 +88,11 @@
 				<div class="label-cell" style="font-size: {labelFont};">{row}</div>
 				{#each cols as _, x}
 					{@const cell = board[y * GameConfig.boardSize + x]}
-					{@const key = `${x},${y}`}
 					<CellComponent
 						x={x}
 						y={y}
 						player={cell.player}
 						isLastMove={lastMove !== null && x === lastMove.x && y === lastMove.y}
-						isOpenRuleInvalid={openRuleInvalid.has(key)}
 						{cellSize}
 						{interactive}
 						onclick={() => handleCellClick(x, y)}
