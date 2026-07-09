@@ -1,0 +1,86 @@
+@import "tailwindcss";
+
+:root {
+	font-family: Inter, ui-rounded, "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+	color: #184b3a;
+	background: #eaf8ef;
+	font-synthesis: none;
+}
+
+html {
+	min-height: 100%;
+	background: #dff3e7;
+}
+
+body {
+	min-width: 320px;
+	min-height: 100vh;
+	margin: 0;
+	background: transparent;
+}
+
+button,
+input,
+select {
+	font: inherit;
+}
+
+button {
+	touch-action: manipulation;
+}
+
+.glass-panel {
+	background: rgba(250, 255, 251, 0.88);
+	border: 1px solid rgba(143, 202, 168, 0.62);
+	box-shadow: 0 16px 42px rgba(39, 104, 75, 0.14);
+	backdrop-filter: blur(18px);
+	-webkit-backdrop-filter: blur(18px);
+}
+
+.mint-button {
+	background: linear-gradient(135deg, #4fae7b, #338a66);
+	color: white;
+	box-shadow: 0 8px 20px rgba(44, 128, 91, 0.2);
+}
+
+.mint-button:hover {
+	filter: brightness(1.04);
+}
+
+.mint-button:disabled {
+	opacity: 0.48;
+	box-shadow: none;
+}
+
+.soft-button {
+	background: rgba(239, 250, 243, 0.94);
+	border: 1px solid #b7ddc5;
+	color: #27664d;
+}
+
+.soft-button:hover {
+	background: #dff4e7;
+}
+
+.mint-input {
+	background: rgba(255, 255, 255, 0.92);
+	border: 1px solid #acd5bc;
+	color: #194c39;
+	outline: none;
+}
+
+.mint-input:focus {
+	border-color: #4fae7b;
+	box-shadow: 0 0 0 3px rgba(79, 174, 123, 0.16);
+}
+
+@media (prefers-reduced-motion: reduce) {
+	*,
+	*::before,
+	*::after {
+		scroll-behavior: auto !important;
+		animation-duration: 0.01ms !important;
+		animation-iteration-count: 1 !important;
+		transition-duration: 0.01ms !important;
+	}
+}

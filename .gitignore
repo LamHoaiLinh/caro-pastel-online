@@ -1,0 +1,68 @@
+# Claude-specific
+.claude/
+
+# Temporary files
+nul
+
+# OS
+.DS_Store
+Thumbs.db
+backend/backend-lint-results.txt
+backend/backend-test-results.txt
+frontend/frontend-lint-results.txt
+frontend/frontend-test-results.txt
+
+# Serena MCP plugin data
+.serena/
+
+# Diagnostic tool
+backend/src/Caro.Diagnostic/
+
+# Test configuration and scripts
+backend/test_config.txt
+backend/test_diagnostic.txt
+**/test_output.txt
+*.host.*-*/
+backend/TestCoords/
+backend/test_book.csx
+test_tt.cs
+
+# SQLite WAL files (temporary)
+*.db-shm
+*.db-wal
+
+# Coverage artifacts
+backend/coverage.out
+backend/coverage/
+frontend/coverage/
+
+# Test output
+frontend/test-results.json
+
+# Match database
+backend/data/
+.playwright-mcp/
+backend/test-results/
+debug-*.png
+board-screenshot*.png
+screenshot-verify.png
+board-fixed.png
+board-with-moves.png
+
+# Temp build artifacts
+*.exe
+
+# Vite dev server cache
+.vite/
+# Old remnants
+docs/
+.runsettings
+
+# Worktrees
+.worktrees/
+/.remember
+
+# Local production builds
+dist/
+backend/caro-server
+backend/server
