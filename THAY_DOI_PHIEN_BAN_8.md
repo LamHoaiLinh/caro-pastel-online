@@ -1,6 +1,13 @@
-# CARO PASTEL ONLINE 8.0
+# CARO PASTEL ONLINE 8.1
 
-## Phần đã nâng cấp
+## Sửa lỗi 8.1
+- Bỏ luật khai cuộc ẩn từng chặn quân Đỏ ở nước thứ hai và báo `open rule violation`.
+- Đồng bộ lại AI để không còn lọc nước đi theo luật đã bỏ.
+- Bỏ vùng đánh dấu cấm khai cuộc ở frontend.
+- Thêm kiểm thử hồi quy: quân Đỏ được phép đánh gần quân đầu tiên sau nước của quân Xanh.
+- Sửa cố định URL npm registry trong `package-lock.json` để GitHub Actions không truy cập kho nội bộ.
+
+## Phần đã nâng cấp từ 8.0
 - Đổi toàn bộ giao diện sang xanh lá pastel, tối ưu cảm ứng và màn hình nhỏ.
 - Tích hợp 4 hình nền người dùng cung cấp, chuyển sang WebP để giảm dung lượng tải.
 - Thêm chọn hình nền và lưu lựa chọn trên từng thiết bị.

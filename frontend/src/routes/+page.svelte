@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { base } from '$app/paths';
+	import RulesGuide from '$lib/components/RulesGuide.svelte';
 </script>
 
 <section class="px-3 py-8 sm:py-14">
@@ -36,9 +37,10 @@
 					<p><strong class="text-white">Bàn cờ:</strong> 16 × 16 ô.</p>
 					<p><strong class="text-white">Thắng:</strong> đúng 5 quân liên tiếp; 6 quân trở lên không tính.</p>
 					<p><strong class="text-white">Hai đầu bị chặn:</strong> không tính thắng.</p>
-					<p><strong class="text-white">Luật mở:</strong> nước thứ hai của bên Đỏ phải cách nước đầu tối thiểu 3 giao điểm.</p>
+					<p><strong class="text-white">Lượt đi:</strong> Đỏ O đi trước, Xanh X đi sau; mỗi lượt đặt một quân vào ô trống.</p>
 				</div>
-				<div class="mt-8 rounded-2xl bg-white/10 border border-white/10 p-4 text-sm leading-6">
+				<div class="mt-6"><RulesGuide /></div>
+				<div class="mt-4 rounded-2xl bg-white/10 border border-white/10 p-4 text-sm leading-6">
 					Giao diện tự co theo màn hình, hỗ trợ cảm ứng, âm thanh, rung nhẹ và lưu hình nền đã chọn trên thiết bị.
 				</div>
 			</div>

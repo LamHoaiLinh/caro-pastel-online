@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { GameMode, TimeControl, DifficultyLevel } from '$lib/types/game';
 	import { difficultyName } from '$lib/types/game';
+	import { timeControlDescription, timeControlShort } from '$lib/utils/timeControl';
 
 	interface Props {
 		gameMode: GameMode;
@@ -27,6 +28,7 @@
 	});
 
 	const modeText = $derived(gameMode === 'pvai' ? 'Người vs AI' : gameMode === 'aivai' ? 'AI vs AI' : 'Hai người cùng máy');
+	const timeText = $derived(timeControlShort(timeControl));
 </script>
 
 <div class="w-full max-w-[900px] mx-auto">
@@ -34,7 +36,7 @@
 		onclick={() => isOpen = !isOpen}
 		class="glass-panel rounded-2xl px-4 py-3 w-full flex items-center justify-between gap-3 text-sm font-semibold text-emerald-900"
 	>
-		<span>{modeText} · {timeControl}</span>
+		<span class="min-w-0 text-left"><span class="block">{modeText}</span><span class="block text-xs text-emerald-800/70 mt-0.5">{timeText}</span></span>
 		<span class="transition-transform {isOpen ? 'rotate-180' : ''}">⌄</span>
 	</button>
 
@@ -53,13 +55,14 @@
 				<label class="text-sm font-semibold text-emerald-900">
 					<span class="block mb-1.5">Thời gian</span>
 					<select bind:value={timeControl} disabled={moveNumber > 0} class="mint-input rounded-xl px-3 py-2.5 w-full">
-						<option value="1+0">1+0</option>
-						<option value="3+0">3+0</option>
-						<option value="3+2">3+2</option>
-						<option value="7+5">7+5</option>
-						<option value="10+0">10+0</option>
-						<option value="15+10">15+10</option>
+						<option value="1+0">1 min + 0 giây/nước</option>
+						<option value="3+0">3 min + 0 giây/nước</option>
+						<option value="3+2">3 min + 2 giây/nước</option>
+						<option value="7+5">7 min + 5 giây/nước</option>
+						<option value="10+0">10 min + 0 giây/nước</option>
+						<option value="15+10">15 min + 10 giây/nước</option>
 					</select>
+					<p class="mt-2 text-xs leading-5 text-emerald-800/75">{timeControlDescription(timeControl)}</p>
 				</label>
 				{#if gameMode !== 'pvp'}
 					<label class="text-sm font-semibold text-emerald-900">

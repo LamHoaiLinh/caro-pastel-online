@@ -13,6 +13,8 @@
 	import { switchPlayer } from '$lib/types/game';
 	import type { Player, Cell, GameMode, TimeControl, DifficultyLevel, OnlineRole, OnlineRoomState } from '$lib/types/game';
 	import { difficultyName } from '$lib/types/game';
+	import { timeControlDescription, timeControlShort } from '$lib/utils/timeControl';
+	import RulesGuide from '$lib/components/RulesGuide.svelte';
 
 	type PlayMode = 'ai' | 'local' | 'online';
 
@@ -62,6 +64,9 @@
 		if (!onlineCode || typeof window === 'undefined') return '';
 		return `${window.location.origin}${base}/game?mode=online&room=${onlineCode}`;
 	});
+
+	const selectedTimeSummary = $derived(timeControlShort(timeControl));
+	const selectedTimeDetail = $derived(timeControlDescription(timeControl));
 
 	function aiLabel(side: 'red' | 'blue'): string {
 		if (playMode === 'online') return side === 'red' ? redName : blueName;
@@ -479,6 +484,7 @@
 			<div class="text-center max-w-2xl mx-auto">
 				<h1 class="text-3xl sm:text-4xl font-black text-emerald-950">Phòng Caro online</h1>
 				<p class="mt-3 text-emerald-950/70">Tạo phòng mới hoặc nhập mã phòng được gửi từ người chơi khác.</p>
+				<div class="mt-4 flex justify-center"><RulesGuide /></div>
 			</div>
 			<div class="mt-7 grid md:grid-cols-2 gap-4">
 				<div class="rounded-2xl border border-emerald-200 bg-white/75 p-5">
@@ -490,13 +496,14 @@
 					<label class="block mt-3 text-sm font-semibold text-emerald-900">
 						Thời gian
 						<select bind:value={timeControl} class="mint-input mt-1.5 w-full rounded-xl px-3 py-2.5">
-							<option value="1+0">1+0</option>
-							<option value="3+0">3+0</option>
-							<option value="3+2">3+2</option>
-							<option value="7+5">7+5</option>
-							<option value="10+0">10+0</option>
-							<option value="15+10">15+10</option>
+							<option value="1+0">1 min + 0 giây/nước</option>
+							<option value="3+0">3 min + 0 giây/nước</option>
+							<option value="3+2">3 min + 2 giây/nước</option>
+							<option value="7+5">7 min + 5 giây/nước</option>
+							<option value="10+0">10 min + 0 giây/nước</option>
+							<option value="15+10">15 min + 10 giây/nước</option>
 						</select>
+						<p class="mt-2 text-xs leading-5 text-emerald-800/75">{selectedTimeDetail}</p>
 					</label>
 					<button onclick={createOnlineRoom} class="mint-button mt-5 w-full rounded-xl px-4 py-3 font-extrabold">Tạo phòng và lấy link</button>
 				</div>
@@ -518,8 +525,8 @@
 {:else}
 	<div class="flex flex-col items-center px-1.5 sm:px-4 py-3 sm:py-5 gap-2.5">
 		{#if playMode === 'online'}
-			<div class="w-full max-w-[900px] glass-panel rounded-2xl p-3 sm:p-4">
-				<div class="flex flex-wrap items-center justify-between gap-3">
+			<div class="w-full max-w-[900px] glass-panel rounded-2xl p-3 sm:p-4 overflow-hidden sticky top-[58px] z-30">
+				<div class="grid grid-cols-1 sm:grid-cols-[1fr_auto] items-center gap-3">
 					<div>
 						<p class="text-xs font-bold uppercase tracking-wider text-emerald-700">Mã phòng</p>
 						<div class="flex items-center gap-2 mt-1">
@@ -527,12 +534,20 @@
 							<span class="inline-flex h-2.5 w-2.5 rounded-full {onlineConnected ? 'bg-emerald-500' : 'bg-amber-500'}"></span>
 						</div>
 					</div>
-					<div class="flex flex-wrap gap-2">
+					<div class="grid grid-cols-2 gap-2">
 						<button onclick={copyShareLink} class="mint-button rounded-xl px-3 py-2 text-sm font-bold">Sao chép link</button>
 						<button onclick={leaveOnlineRoom} class="soft-button rounded-xl px-3 py-2 text-sm font-bold">Rời phòng</button>
 					</div>
 				</div>
-				<input readonly value={shareLink()} class="mint-input mt-3 w-full rounded-xl px-3 py-2 text-xs" aria-label="Link chia sẻ phòng" />
+				<div class="mt-3 rounded-xl border border-emerald-200 bg-white/80 p-2.5">
+					<p class="text-[11px] font-bold uppercase tracking-wide text-emerald-700 mb-1">Link mời bạn chơi</p>
+					<input readonly value={shareLink()} class="mint-input w-full min-w-0 rounded-lg px-2.5 py-2 text-xs" aria-label="Link chia sẻ phòng" />
+					<p class="mt-1.5 text-[11px] leading-4 text-emerald-800/70">Bấm “Sao chép link”, gửi cho bạn. Người nhận chỉ cần mở link và nhập tên.</p>
+				</div>
+				<div class="mt-2 flex flex-wrap items-center gap-2 text-xs">
+					<span class="rounded-lg bg-emerald-100 px-2.5 py-1.5 font-bold text-emerald-900">Thời gian: {selectedTimeSummary}</span>
+					<RulesGuide compact={true} />
+				</div>
 				<p class="mt-2 text-sm font-semibold {opponentJoined ? 'text-emerald-800' : 'text-amber-800'}">
 					{#if onlineRole === 'spectator'}Bạn đang xem ván đấu.{:else}Bạn cầm quân {onlineRole === 'red' ? 'Đỏ (O)' : 'Xanh (X)'}.{/if}
 					{opponentJoined ? ' Hai người đã sẵn sàng.' : ' Đang chờ người thứ hai mở link.'}
@@ -541,6 +556,11 @@
 		{:else}
 			<GameSettings bind:gameMode bind:timeControl bind:aiSide bind:difficulty moveNumber={store.moveNumber} onNewGame={createNewGame} />
 		{/if}
+
+		<div class="w-full max-w-[900px] rounded-xl border border-emerald-200 bg-emerald-50/90 px-3 py-2 text-xs sm:text-sm text-emerald-900 flex flex-wrap items-center justify-between gap-2">
+			<span><b>Thời gian:</b> {selectedTimeSummary}</span>
+			<span class="text-emerald-800/70">{selectedTimeDetail}</span>
+		</div>
 
 		<div class="w-full max-w-[900px] glass-panel rounded-2xl px-3 py-2 flex items-center justify-between gap-2 text-sm">
 			<div class="font-semibold text-emerald-950">

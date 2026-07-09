@@ -7,10 +7,10 @@ export const UIConfig = {
 	maxCellSize: 64,
 
 	/** Minimum board cell size in pixels */
-	minCellSize: 18,
+	minCellSize: 14,
 
 	/** Fraction of viewport width the board occupies */
-	boardWidthFraction: 0.95,
+	boardWidthFraction: 1,
 
 	/** Touch ghost stone vertical offset in pixels */
 	ghostStoneTouchOffset: 50,

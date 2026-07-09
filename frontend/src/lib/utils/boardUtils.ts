@@ -15,6 +15,9 @@ export function isValidCell(x: number, y: number): boolean {
 }
 
 export function computeCellSize(viewportWidth: number): number {
-	const size = Math.floor((viewportWidth * UIConfig.boardWidthFraction) / GameConfig.boardSize);
+	// Chừa chỗ cho hai cột nhãn số ở hai bên bàn cờ.
+	// Công thức cũ chỉ chia cho 16 ô nên tổng bàn + nhãn rộng hơn màn hình điện thoại.
+	const effectiveColumns = GameConfig.boardSize + 1.08;
+	const size = Math.floor((viewportWidth * UIConfig.boardWidthFraction) / effectiveColumns);
 	return Math.max(UIConfig.minCellSize, Math.min(UIConfig.maxCellSize, size));
 }

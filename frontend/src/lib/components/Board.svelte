@@ -72,8 +72,8 @@
 	});
 </script>
 
-<div class="w-full max-w-[900px] mx-auto overflow-x-auto pb-1" bind:this={boardEl} ontouchmove={handleTouchMove}>
-	<div class="relative inline-block min-w-max left-1/2 -translate-x-1/2">
+<div class="w-full max-w-[900px] mx-auto overflow-hidden pb-1 px-0.5" bind:this={boardEl} ontouchmove={handleTouchMove}>
+	<div class="relative mx-auto w-max max-w-full">
 		<div
 			class="grid gap-0 touch-none select-none rounded-2xl overflow-hidden border border-emerald-300/70 shadow-[0_16px_38px_rgba(30,101,70,0.18)]"
 			style="display: grid; grid-template-columns: {labelSize}px repeat({GameConfig.boardSize}, {cellSize}px) {labelSize}px; grid-template-rows: {labelSize}px repeat({GameConfig.boardSize}, {cellSize}px) {labelSize}px;"

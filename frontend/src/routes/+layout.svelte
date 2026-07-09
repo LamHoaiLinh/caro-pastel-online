@@ -5,6 +5,7 @@
 	import { onMount } from 'svelte';
 	import BackgroundPicker from '$lib/components/BackgroundPicker.svelte';
 	import SoundToggle from '$lib/components/SoundToggle.svelte';
+	import RulesGuide from '$lib/components/RulesGuide.svelte';
 
 	let { children } = $props();
 	let backgroundId = $state('workspace');
@@ -41,13 +42,14 @@
 <div class="fixed inset-0 -z-10 bg-gradient-to-b from-emerald-950/20 via-emerald-900/5 to-emerald-950/20"></div>
 
 <nav class="sticky top-0 z-40 border-b border-emerald-200/70 bg-white/82 backdrop-blur-xl">
-	<div class="max-w-7xl mx-auto px-3 py-2 sm:px-5 sm:py-3 flex items-center justify-between gap-3">
-		<a href={`${base}/`} class="font-extrabold tracking-tight text-emerald-900 text-lg sm:text-xl">
+	<div class="max-w-7xl mx-auto px-2.5 py-2 sm:px-5 sm:py-3 flex items-center justify-between gap-2 min-w-0">
+		<a href={`${base}/`} class="font-extrabold tracking-tight text-emerald-900 text-base sm:text-xl shrink-0">
 			Caro Pastel
 		</a>
-		<div class="flex items-center gap-2">
+		<div class="flex items-center gap-1.5 sm:gap-2 min-w-0">
 			<a href={`${base}/game?mode=ai`} class="hidden sm:inline-flex soft-button rounded-xl px-3 py-2 text-sm font-semibold">Chơi với AI</a>
 			<a href={`${base}/game?mode=online`} class="hidden sm:inline-flex mint-button rounded-xl px-3 py-2 text-sm font-semibold">Chơi online</a>
+			<RulesGuide compact={true} />
 			<BackgroundPicker selected={backgroundId} onSelect={selectBackground} />
 			<SoundToggle />
 		</div>
