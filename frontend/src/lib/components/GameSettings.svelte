@@ -1,11 +1,12 @@
 <script lang="ts">
 	import type { GameMode, TimeControl, DifficultyLevel } from '$lib/types/game';
 	import { difficultyName } from '$lib/types/game';
-	import { timeControlDescription, timeControlShort } from '$lib/utils/timeControl';
+	import { recommendedMoveTimeLimit, timeControlDescription, timeControlShort } from '$lib/utils/timeControl';
 
 	interface Props {
 		gameMode: GameMode;
 		timeControl: TimeControl;
+		moveTimeLimit: number;
 		aiSide: 'red' | 'blue';
 		difficulty: DifficultyLevel;
 		moveNumber: number;
@@ -15,6 +16,7 @@
 	let {
 		gameMode = $bindable(),
 		timeControl = $bindable(),
+		moveTimeLimit = $bindable(),
 		aiSide = $bindable(),
 		difficulty = $bindable(),
 		moveNumber,
@@ -28,7 +30,12 @@
 	});
 
 	const modeText = $derived(gameMode === 'pvai' ? 'Người vs AI' : gameMode === 'aivai' ? 'AI vs AI' : 'Hai người cùng máy');
-	const timeText = $derived(timeControlShort(timeControl));
+	const timeText = $derived(timeControlShort(timeControl, moveTimeLimit));
+
+	function updateTimeControl(value: TimeControl) {
+		timeControl = value;
+		moveTimeLimit = recommendedMoveTimeLimit(value);
+	}
 </script>
 
 <div class="w-full max-w-[900px] mx-auto">
@@ -51,10 +58,10 @@
 				</div>
 			</div>
 
-			<div class="grid sm:grid-cols-3 gap-3">
+			<div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
 				<label class="text-sm font-semibold text-emerald-900">
-					<span class="block mb-1.5">Thời gian</span>
-					<select bind:value={timeControl} disabled={moveNumber > 0} class="mint-input rounded-xl px-3 py-2.5 w-full">
+					<span class="block mb-1.5">Tổng giờ và cộng giờ</span>
+					<select value={timeControl} onchange={(event) => updateTimeControl((event.currentTarget as HTMLSelectElement).value as TimeControl)} disabled={moveNumber > 0} class="mint-input rounded-xl px-3 py-2.5 w-full">
 						<option value="1+0">1 min + 0 giây/nước</option>
 						<option value="3+0">3 min + 0 giây/nước</option>
 						<option value="3+2">3 min + 2 giây/nước</option>
@@ -62,7 +69,18 @@
 						<option value="10+0">10 min + 0 giây/nước</option>
 						<option value="15+10">15 min + 10 giây/nước</option>
 					</select>
-					<p class="mt-2 text-xs leading-5 text-emerald-800/75">{timeControlDescription(timeControl)}</p>
+				</label>
+				<label class="text-sm font-semibold text-emerald-900">
+					<span class="block mb-1.5">Giới hạn mỗi lượt</span>
+					<select bind:value={moveTimeLimit} disabled={moveNumber > 0} class="mint-input rounded-xl px-3 py-2.5 w-full">
+						<option value={10}>10 giây/lượt</option>
+						<option value={15}>15 giây/lượt</option>
+						<option value={20}>20 giây/lượt</option>
+						<option value={30}>30 giây/lượt</option>
+						<option value={45}>45 giây/lượt</option>
+						<option value={60}>60 giây/lượt</option>
+						<option value={90}>90 giây/lượt</option>
+					</select>
 				</label>
 				{#if gameMode !== 'pvp'}
 					<label class="text-sm font-semibold text-emerald-900">
@@ -84,6 +102,7 @@
 					</label>
 				{/if}
 			</div>
+			<p class="rounded-xl bg-emerald-50/90 border border-emerald-200 px-3 py-2 text-xs leading-5 text-emerald-800/80">{timeControlDescription(timeControl, moveTimeLimit)}</p>
 
 			<button onclick={onNewGame} class="mint-button rounded-xl px-5 py-2.5 font-bold w-full sm:w-auto">Bắt đầu ván mới</button>
 		</div>

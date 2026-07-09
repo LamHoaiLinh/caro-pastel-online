@@ -86,6 +86,7 @@ func (h *Handler) CreateGame(w http.ResponseWriter, r *http.Request) {
 	session := NewGameSession(timeControl, initialTimeMs, incrementSeconds, gameMode, redDiff, blueDiff, nil, func() int {
 		return h.store.ActiveGameCount()
 	})
+	session.SetMoveTimeLimit(normalizeMoveTimeLimit(req.MoveTimeLimit, timeControl))
 	h.store.Set(gameID, session)
 
 	if h.matches != nil {

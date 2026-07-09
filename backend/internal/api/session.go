@@ -14,6 +14,9 @@ type GameSession struct {
 	redTimeMs       int64
 	blueTimeMs      int64
 	lastMoveAt      time.Time
+	moveTimeLimitMs int64
+	clockRunning    bool
+	timeoutReason   string
 	redDifficulty   *int
 	blueDifficulty  *int
 	logger          *slog.Logger
@@ -36,11 +39,48 @@ func NewGameSession(
 		redTimeMs:       initialTimeMs,
 		blueTimeMs:      initialTimeMs,
 		lastMoveAt:      time.Now(),
+		clockRunning:    true,
 		redDifficulty:   redDiff,
 		blueDifficulty:  blueDiff,
 		logger:          logger,
 		activeGameCount: activeGameCount,
 	}
+}
+
+// SetMoveTimeLimit configures the maximum thinking time for one turn.
+// A value <= 0 disables the per-turn limit.
+func (s *GameSession) SetMoveTimeLimit(seconds int) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if seconds <= 0 {
+		s.moveTimeLimitMs = 0
+		return
+	}
+	s.moveTimeLimitMs = int64(seconds) * 1000
+}
+
+// PauseClock freezes both total clocks and the current-turn clock.
+func (s *GameSession) PauseClock() {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.game.IsGameOver || !s.clockRunning {
+		return
+	}
+	now := time.Now()
+	s.redTimeMs, s.blueTimeMs = s.currentTimesLocked(now)
+	s.clockRunning = false
+	s.lastMoveAt = now
+}
+
+// StartClock starts or resumes the clock from the current instant.
+func (s *GameSession) StartClock() {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.game.IsGameOver || s.clockRunning {
+		return
+	}
+	s.clockRunning = true
+	s.lastMoveAt = time.Now()
 }
 
 func (s *GameSession) GetResponse() GameResponse {
@@ -83,6 +123,9 @@ func (s *GameSession) ExtractForAI() (domain.Board, domain.Player, bool, int64, 
 		timeRemaining = blueTime
 		diff = s.blueDifficulty
 	}
+	if turnRemaining := s.currentTurnTimeLocked(now); turnRemaining > 0 && turnRemaining < timeRemaining {
+		timeRemaining = turnRemaining
+	}
 
 	return s.game.Board, s.game.CurrentPlayer, s.game.IsGameOver,
 		timeRemaining, s.game.IncrementSeconds, s.game.MoveNumber, diff
@@ -122,7 +165,10 @@ func (s *GameSession) ApplyMove(x, y int) (GameResponse, error) {
 		newGame = newGame.WithGameOver(result.Winner, result.WinningLine)
 	}
 
-	elapsed := now.Sub(s.lastMoveAt).Milliseconds()
+	elapsed := int64(0)
+	if s.clockRunning {
+		elapsed = now.Sub(s.lastMoveAt).Milliseconds()
+	}
 	inc := int64(newGame.IncrementSeconds) * 1000
 	if s.game.CurrentPlayer == domain.PlayerRed {
 		s.redTimeMs = max(0, s.redTimeMs-elapsed+inc)
@@ -130,10 +176,12 @@ func (s *GameSession) ApplyMove(x, y int) (GameResponse, error) {
 		s.blueTimeMs = max(0, s.blueTimeMs-elapsed+inc)
 	}
 	s.lastMoveAt = now
+	s.timeoutReason = ""
 
 	s.game = newGame
 
 	if newGame.IsGameOver {
+		s.clockRunning = false
 		s.DisposeAI()
 	}
 
@@ -150,6 +198,7 @@ func (s *GameSession) UndoLastMove() (GameResponse, error) {
 	}
 	s.game = newGame
 	s.lastMoveAt = time.Now()
+	s.timeoutReason = ""
 	return s.buildResponseAt(s.lastMoveAt), nil
 }
 
@@ -167,7 +216,7 @@ func (s *GameSession) DisposeAI() {
 func (s *GameSession) currentTimesLocked(now time.Time) (int64, int64) {
 	redTime := s.redTimeMs
 	blueTime := s.blueTimeMs
-	if s.game.IsGameOver {
+	if s.game.IsGameOver || !s.clockRunning {
 		return redTime, blueTime
 	}
 
@@ -180,19 +229,47 @@ func (s *GameSession) currentTimesLocked(now time.Time) (int64, int64) {
 	return redTime, blueTime
 }
 
-func (s *GameSession) expireIfNeededLocked(now time.Time) {
+func (s *GameSession) currentTurnTimeLocked(now time.Time) int64 {
+	if s.moveTimeLimitMs <= 0 {
+		return 0
+	}
 	if s.game.IsGameOver {
+		return 0
+	}
+	if !s.clockRunning {
+		return s.moveTimeLimitMs
+	}
+	return max(0, s.moveTimeLimitMs-now.Sub(s.lastMoveAt).Milliseconds())
+}
+
+func (s *GameSession) expireIfNeededLocked(now time.Time) {
+	if s.game.IsGameOver || !s.clockRunning {
 		return
 	}
 	redTime, blueTime := s.currentTimesLocked(now)
-	if s.game.CurrentPlayer == domain.PlayerRed && redTime <= 0 {
-		s.redTimeMs = 0
+	turnTime := s.currentTurnTimeLocked(now)
+	turnExpired := s.moveTimeLimitMs > 0 && turnTime <= 0
+
+	if s.game.CurrentPlayer == domain.PlayerRed && (redTime <= 0 || turnExpired) {
+		s.redTimeMs = redTime
+		s.blueTimeMs = blueTime
+		s.timeoutReason = "total"
+		if turnExpired && redTime > 0 {
+			s.timeoutReason = "move"
+		}
 		s.game = s.game.WithGameOver(domain.PlayerBlue, nil)
+		s.clockRunning = false
 		s.lastMoveAt = now
 		s.DisposeAI()
-	} else if s.game.CurrentPlayer == domain.PlayerBlue && blueTime <= 0 {
-		s.blueTimeMs = 0
+	} else if s.game.CurrentPlayer == domain.PlayerBlue && (blueTime <= 0 || turnExpired) {
+		s.redTimeMs = redTime
+		s.blueTimeMs = blueTime
+		s.timeoutReason = "total"
+		if turnExpired && blueTime > 0 {
+			s.timeoutReason = "move"
+		}
 		s.game = s.game.WithGameOver(domain.PlayerRed, nil)
+		s.clockRunning = false
 		s.lastMoveAt = now
 		s.DisposeAI()
 	}
@@ -200,6 +277,7 @@ func (s *GameSession) expireIfNeededLocked(now time.Time) {
 
 func (s *GameSession) buildResponseAt(now time.Time) GameResponse {
 	redTime, blueTime := s.currentTimesLocked(now)
+	turnTime := s.currentTurnTimeLocked(now)
 	cells := make([]CellResponse, 0, domain.BoardSize*domain.BoardSize)
 	for y := range domain.BoardSize {
 		for x := range domain.BoardSize {
@@ -222,9 +300,13 @@ func (s *GameSession) buildResponseAt(now time.Time) GameResponse {
 		WinningLine:       winningLine,
 		RedTimeRemaining:  float64(redTime) / 1000.0,
 		BlueTimeRemaining: float64(blueTime) / 1000.0,
+		TurnTimeRemaining: float64(turnTime) / 1000.0,
 		TimeControl:       s.game.TimeControl,
 		InitialTime:       int(s.game.InitialTimeMs / 1000),
 		Increment:         s.game.IncrementSeconds,
+		MoveTimeLimit:     int(s.moveTimeLimitMs / 1000),
+		ClockRunning:      s.clockRunning,
+		TimeoutReason:     s.timeoutReason,
 		GameMode:          s.game.GameMode.String(),
 		RedDifficulty:     s.redDifficulty,
 		BlueDifficulty:    s.blueDifficulty,

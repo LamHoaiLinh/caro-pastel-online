@@ -2,6 +2,7 @@ package api
 
 type CreateGameRequest struct {
 	TimeControl    string `json:"timeControl"`
+	MoveTimeLimit  int    `json:"moveTimeLimit"`
 	GameMode       string `json:"gameMode"`
 	Difficulty     *int   `json:"difficulty"`
 	RedDifficulty  *int   `json:"redDifficulty"`
@@ -22,9 +23,13 @@ type GameResponse struct {
 	WinningLine       []PositionResponse `json:"winningLine"`
 	RedTimeRemaining  float64            `json:"redTimeRemaining"`
 	BlueTimeRemaining float64            `json:"blueTimeRemaining"`
+	TurnTimeRemaining float64            `json:"turnTimeRemaining"`
 	TimeControl       string             `json:"timeControl"`
 	InitialTime       int                `json:"initialTime"`
 	Increment         int                `json:"increment"`
+	MoveTimeLimit     int                `json:"moveTimeLimit"`
+	ClockRunning      bool               `json:"clockRunning"`
+	TimeoutReason     string             `json:"timeoutReason,omitempty"`
 	GameMode          string             `json:"gameMode"`
 	RedDifficulty     *int               `json:"redDifficulty"`
 	BlueDifficulty    *int               `json:"blueDifficulty"`

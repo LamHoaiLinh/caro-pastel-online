@@ -13,7 +13,7 @@
 	import { switchPlayer } from '$lib/types/game';
 	import type { Player, Cell, GameMode, TimeControl, DifficultyLevel, OnlineRole, OnlineRoomState } from '$lib/types/game';
 	import { difficultyName } from '$lib/types/game';
-	import { timeControlDescription, timeControlShort } from '$lib/utils/timeControl';
+	import { recommendedMoveTimeLimit, timeControlDescription, timeControlShort } from '$lib/utils/timeControl';
 	import RulesGuide from '$lib/components/RulesGuide.svelte';
 
 	type PlayMode = 'ai' | 'local' | 'online';
@@ -30,6 +30,10 @@
 	let blueTime = $state(420);
 	let gameMode = $state<GameMode>('pvai');
 	let timeControl = $state<TimeControl>('7+5');
+	let moveTimeLimit = $state(30);
+	let turnTimeRemaining = $state(30);
+	let clockRunning = $state(true);
+	let timeoutReason = $state<'move' | 'total' | ''>('');
 	let aiSide = $state<'red' | 'blue'>('blue');
 	let difficulty = $state<DifficultyLevel>(3);
 	let redDifficulty = $state<number | null>(null);
@@ -65,8 +69,8 @@
 		return `${window.location.origin}${base}/game?mode=online&room=${onlineCode}`;
 	});
 
-	const selectedTimeSummary = $derived(timeControlShort(timeControl));
-	const selectedTimeDetail = $derived(timeControlDescription(timeControl));
+	const selectedTimeSummary = $derived(timeControlShort(timeControl, moveTimeLimit));
+	const selectedTimeDetail = $derived(timeControlDescription(timeControl, moveTimeLimit));
 
 	function aiLabel(side: 'red' | 'blue'): string {
 		if (playMode === 'online') return side === 'red' ? redName : blueName;
@@ -113,6 +117,11 @@
 		store.winner = state.winner && state.winner !== 'none' ? state.winner : undefined;
 		redTime = state.redTimeRemaining ?? redTime;
 		blueTime = state.blueTimeRemaining ?? blueTime;
+		turnTimeRemaining = state.turnTimeRemaining ?? turnTimeRemaining;
+		clockRunning = state.clockRunning ?? true;
+		timeoutReason = state.timeoutReason ?? '';
+		if (state.timeControl) timeControl = state.timeControl as TimeControl;
+		if (state.moveTimeLimit > 0) moveTimeLimit = state.moveTimeLimit;
 		winningLine = state.winningLine ?? [];
 		if (state.redDifficulty != null) redDifficulty = state.redDifficulty;
 		if (state.blueDifficulty != null) blueDifficulty = state.blueDifficulty;
@@ -144,6 +153,7 @@
 		blueDifficulty = null;
 		isAiThinking = false;
 		moveInProgress = false;
+		timeoutReason = '';
 		error = '';
 	}
 
@@ -183,6 +193,7 @@
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({
 					timeControl,
+					moveTimeLimit,
 					gameMode,
 					...(gameMode === 'pvai'
 						? { [aiSide === 'red' ? 'redDifficulty' : 'blueDifficulty']: difficulty }
@@ -308,6 +319,11 @@
 		store.winner = switchPlayer(player as Player);
 	}
 
+	function updateOnlineTimeControl(value: TimeControl) {
+		timeControl = value;
+		moveTimeLimit = recommendedMoveTimeLimit(value);
+	}
+
 	function savePlayerName() {
 		playerName = playerName.trim().slice(0, 24);
 		if (playerName) localStorage.setItem('caro-player-name', playerName);
@@ -325,7 +341,7 @@
 			const response = await fetch(`${ApiConfig.baseUrl}${ApiConfig.endpoints.onlineCreate}`, {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ timeControl, playerName })
+				body: JSON.stringify({ timeControl, moveTimeLimit, playerName })
 			});
 			if (!response.ok) throw new Error(await responseMessage(response));
 			const room: OnlineRoomState = await response.json();
@@ -494,8 +510,8 @@
 						<input bind:value={playerName} maxlength="24" placeholder="Ví dụ: Anh Linh" class="mint-input mt-1.5 w-full rounded-xl px-3 py-2.5" />
 					</label>
 					<label class="block mt-3 text-sm font-semibold text-emerald-900">
-						Thời gian
-						<select bind:value={timeControl} class="mint-input mt-1.5 w-full rounded-xl px-3 py-2.5">
+						Tổng giờ và cộng giờ
+						<select value={timeControl} onchange={(event) => updateOnlineTimeControl((event.currentTarget as HTMLSelectElement).value as TimeControl)} class="mint-input mt-1.5 w-full rounded-xl px-3 py-2.5">
 							<option value="1+0">1 min + 0 giây/nước</option>
 							<option value="3+0">3 min + 0 giây/nước</option>
 							<option value="3+2">3 min + 2 giây/nước</option>
@@ -503,7 +519,19 @@
 							<option value="10+0">10 min + 0 giây/nước</option>
 							<option value="15+10">15 min + 10 giây/nước</option>
 						</select>
-						<p class="mt-2 text-xs leading-5 text-emerald-800/75">{selectedTimeDetail}</p>
+					</label>
+					<label class="block mt-3 text-sm font-semibold text-emerald-900">
+						Giới hạn mỗi lượt
+						<select bind:value={moveTimeLimit} class="mint-input mt-1.5 w-full rounded-xl px-3 py-2.5">
+							<option value={10}>10 giây/lượt</option>
+							<option value={15}>15 giây/lượt</option>
+							<option value={20}>20 giây/lượt</option>
+							<option value={30}>30 giây/lượt</option>
+							<option value={45}>45 giây/lượt</option>
+							<option value={60}>60 giây/lượt</option>
+							<option value={90}>90 giây/lượt</option>
+						</select>
+						<p class="mt-2 rounded-xl border border-emerald-200 bg-emerald-50/80 px-3 py-2 text-xs leading-5 text-emerald-800/80">{selectedTimeDetail}</p>
 					</label>
 					<button onclick={createOnlineRoom} class="mint-button mt-5 w-full rounded-xl px-4 py-3 font-extrabold">Tạo phòng và lấy link</button>
 				</div>
@@ -550,13 +578,18 @@
 				</div>
 				<p class="mt-2 text-sm font-semibold {opponentJoined ? 'text-emerald-800' : 'text-amber-800'}">
 					{#if onlineRole === 'spectator'}Bạn đang xem ván đấu.{:else}Bạn cầm quân {onlineRole === 'red' ? 'Đỏ (O)' : 'Xanh (X)'}.{/if}
-					{opponentJoined ? ' Hai người đã sẵn sàng.' : ' Đang chờ người thứ hai mở link.'}
+					{opponentJoined ? ' Hai người đã sẵn sàng, đồng hồ bắt đầu chạy.' : ' Đang chờ người thứ hai mở link. Đồng hồ đang tạm dừng và chưa trừ thời gian.'}
 				</p>
 			</div>
 		{:else}
-			<GameSettings bind:gameMode bind:timeControl bind:aiSide bind:difficulty moveNumber={store.moveNumber} onNewGame={createNewGame} />
+			<GameSettings bind:gameMode bind:timeControl bind:moveTimeLimit bind:aiSide bind:difficulty moveNumber={store.moveNumber} onNewGame={createNewGame} />
 		{/if}
 
+		{#if playMode === 'online' && !opponentJoined}
+			<div class="w-full max-w-[900px] rounded-xl border border-amber-300 bg-amber-50/95 px-3 py-2.5 text-sm font-bold text-amber-900 text-center">
+				Đang chờ người chơi thứ hai · cả tổng giờ và giới hạn mỗi lượt đều chưa chạy
+			</div>
+		{/if}
 		<div class="w-full max-w-[900px] rounded-xl border border-emerald-200 bg-emerald-50/90 px-3 py-2 text-xs sm:text-sm text-emerald-900 flex flex-wrap items-center justify-between gap-2">
 			<span><b>Thời gian:</b> {selectedTimeSummary}</span>
 			<span class="text-emerald-800/70">{selectedTimeDetail}</span>
@@ -575,13 +608,13 @@
 			</div>
 		</div>
 
-		<PlayerTimerStrip player="blue" timeRemaining={blueTime} isActive={(playMode !== 'online' || opponentJoined) && store.currentPlayer === 'blue' && !store.isGameOver} onTimeOut={() => handleTimeOut('blue')} label={aiLabel('blue')} />
+		<PlayerTimerStrip player="blue" timeRemaining={blueTime} {turnTimeRemaining} {moveTimeLimit} isActive={clockRunning && (playMode !== 'online' || opponentJoined) && store.currentPlayer === 'blue' && !store.isGameOver} onTimeOut={() => handleTimeOut('blue')} label={aiLabel('blue')} />
 		<Board board={store.board} onMove={handleMove} {winningLine} {lastMove} interactive={boardInteractive()} />
-		<PlayerTimerStrip player="red" timeRemaining={redTime} isActive={(playMode !== 'online' || opponentJoined) && store.currentPlayer === 'red' && !store.isGameOver} onTimeOut={() => handleTimeOut('red')} label={aiLabel('red')} />
+		<PlayerTimerStrip player="red" timeRemaining={redTime} {turnTimeRemaining} {moveTimeLimit} isActive={clockRunning && (playMode !== 'online' || opponentJoined) && store.currentPlayer === 'red' && !store.isGameOver} onTimeOut={() => handleTimeOut('red')} label={aiLabel('red')} />
 		<MoveNotation moves={store.moveHistory} currentMoveNumber={store.moveNumber} />
 	</div>
 
 	{#if store.isGameOver}
-		<GameResultBanner winner={store.winner} onNewGame={createNewGame} />
+		<GameResultBanner winner={store.winner} {timeoutReason} onNewGame={createNewGame} />
 	{/if}
 {/if}

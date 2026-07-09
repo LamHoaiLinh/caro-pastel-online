@@ -6,6 +6,7 @@ import (
 	"os"
 	"sync/atomic"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -67,7 +68,7 @@ func TestSessionApplyMoveAfterGameOver(t *testing.T) {
 		{3, 0}, {1, 2}, // R(dist=3), B
 		{1, 0}, {2, 2}, // R, B
 		{4, 0}, {3, 2}, // R, B
-		{2, 0},         // R wins: 0,1,2,3,4 at y=0
+		{2, 0}, // R wins: 0,1,2,3,4 at y=0
 	}
 	for _, m := range moves {
 		_, err := s.ApplyMove(m.x, m.y)
@@ -142,4 +143,44 @@ func TestSessionUndoMove(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, 0, resp.MoveNumber)
 	assert.Equal(t, "red", resp.CurrentPlayer)
+}
+
+func TestSessionPausedClockDoesNotDecrease(t *testing.T) {
+	s := newTestSession()
+	s.SetMoveTimeLimit(30)
+	s.PauseClock()
+
+	s.mu.Lock()
+	s.lastMoveAt = time.Now().Add(-10 * time.Second)
+	s.mu.Unlock()
+
+	resp := s.GetResponse()
+	assert.False(t, resp.ClockRunning)
+	assert.InDelta(t, 300.0, resp.RedTimeRemaining, 0.01)
+	assert.InDelta(t, 30.0, resp.TurnTimeRemaining, 0.01)
+
+	s.StartClock()
+	s.mu.Lock()
+	s.lastMoveAt = time.Now().Add(-2 * time.Second)
+	s.mu.Unlock()
+
+	resp = s.GetResponse()
+	assert.True(t, resp.ClockRunning)
+	assert.InDelta(t, 298.0, resp.RedTimeRemaining, 0.2)
+	assert.InDelta(t, 28.0, resp.TurnTimeRemaining, 0.2)
+}
+
+func TestSessionMoveTimeLimitCausesLoss(t *testing.T) {
+	s := newTestSession()
+	s.SetMoveTimeLimit(5)
+
+	s.mu.Lock()
+	s.lastMoveAt = time.Now().Add(-6 * time.Second)
+	s.mu.Unlock()
+
+	resp := s.GetResponse()
+	assert.True(t, resp.IsGameOver)
+	assert.Equal(t, "blue", resp.Winner)
+	assert.Equal(t, "move", resp.TimeoutReason)
+	assert.False(t, resp.ClockRunning)
 }

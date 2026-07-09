@@ -1,93 +1,54 @@
-# Caro Pastel Online
+# Caro Pastel Online V8.3
 
-Phiên bản 8.1 giao diện xanh lá pastel cho game Caro 16×16, tối ưu để chơi trên điện thoại và máy tính.
+Game Caro 16×16 giao diện xanh lá pastel, chơi trên điện thoại và máy tính qua GitHub Pages + Render.
 
 ## Tính năng chính
-
-- Giao diện pastel xanh lá, responsive cho màn hình nhỏ và lớn.
-- 4 ảnh nền đi kèm, đổi nền ngay trong giao diện và tự ghi nhớ lựa chọn.
-- Chơi với AI gồm 5 cấp độ.
-- Hai người chơi chung một thiết bị.
-- Chơi online bằng mã phòng 6 ký tự hoặc gửi đường dẫn phòng cho người khác.
-- Người thứ ba có thể vào phòng ở chế độ xem.
-- Luật thắng đúng 5 quân liên tiếp và luật khai cuộc của dự án gốc được giữ lại.
-- Frontend xuất thành website tĩnh bằng SvelteKit để triển khai trên GitHub Pages.
-- Backend Go có thể triển khai bằng Render Blueprint từ file `render.yaml`.
+- Giao diện responsive, 4 ảnh nền pastel và lưu lựa chọn nền.
+- Chơi với AI 5 cấp độ, hai người cùng máy hoặc hai người online bằng mã/link phòng.
+- Phòng online không chạy giờ cho đến khi người chơi thứ hai tham gia.
+- Đồng hồ kép: tổng thời gian mỗi bên và giới hạn suy nghĩ cho từng lượt.
+- Tùy chọn giới hạn mỗi lượt: 10–90 giây; hết giới hạn thì thua dù tổng giờ vẫn còn.
+- Cộng giờ sau mỗi nước theo cấu hình như `7 min + 5 giây/nước`.
+- Người thứ ba có thể vào xem phòng.
+- Luật thắng: đúng 5 quân liên tiếp; 6 quân trở lên hoặc chuỗi bị chặn cả hai đầu không tính thắng.
+- Frontend SvelteKit tĩnh triển khai bằng GitHub Pages; backend Go triển khai bằng Render Blueprint.
 
 ## Khởi động nhanh trên Windows
-
 Nhấp đúp:
-
 ```text
 run_local_windows.bat
 ```
-
-Sau khi cửa sổ backend và frontend mở, truy cập:
-
+Sau đó mở:
 ```text
 http://localhost:5173
 ```
 
-## Build kiểm tra toàn bộ
-
-Nhấp đúp:
-
+## Build kiểm tra
 ```text
 build_all_windows.bat
 ```
-
 Kết quả:
-
-- Frontend tĩnh: `frontend/build/`
+- Frontend: `frontend/build/`
 - Backend Windows: `dist/caro-server.exe`
 
 ## Triển khai online
-
-Xem hướng dẫn từng bước tại:
-
+Xem:
 ```text
 HUONG_DAN_BUILD_DEPLOY.md
 ```
-
-Luồng triển khai đề nghị:
-
-1. Đưa toàn bộ source lên GitHub.
-2. Tạo backend trên Render bằng `render.yaml`.
-3. Lấy URL backend Render và tạo GitHub Actions variable `VITE_API_BASE_URL`.
-4. Bật GitHub Pages với nguồn `GitHub Actions`.
-5. Workflow `.github/workflows/deploy-pages.yml` tự build và xuất bản frontend.
-
-## Cấu trúc chính
-
+Cập nhật riêng V8.3:
 ```text
-frontend/                         Giao diện SvelteKit
-backend/                          API và AI engine viết bằng Go
-frontend/static/backgrounds/      Ảnh nền đã tối ưu WebP
-.github/workflows/                Workflow GitHub Pages
-render.yaml                       Cấu hình Render Blueprint
-HUONG_DAN_BUILD_DEPLOY.md          Hướng dẫn build và deploy tiếng Việt
+HUONG_DAN_CAP_NHAT_8_3.md
 ```
 
-## API online room
-
+## Cấu trúc
 ```text
-POST /api/online/create
-POST /api/online/{code}/join
-GET  /api/online/{code}
-POST /api/online/{code}/move
+frontend/                       Giao diện SvelteKit
+backend/                        API, phòng online và AI engine Go
+frontend/static/backgrounds/    Ảnh nền WebP
+.github/workflows/              Workflow GitHub Pages
+render.yaml                     Render Blueprint
 ```
 
-Phòng online hiện được giữ trong RAM của backend và tự hết hạn sau 45 phút không hoạt động. Khi Render khởi động lại hoặc deploy lại, các phòng đang mở sẽ mất; đây là thiết kế phù hợp cho bản đơn giản, không đăng nhập.
-
-## Yêu cầu môi trường phát triển
-
-- Node.js 20 trở lên
-- Go theo phiên bản ghi trong `backend/go.mod`
-- npm
-
-## Kiểm tra thủ công đề nghị trước khi public
-
-- Chơi AI cấp 1 và cấp 5 trên điện thoại.
-- Tạo phòng bằng máy tính, tham gia bằng điện thoại qua mạng 4G/5G.
-- Kiểm tra đường dẫn GitHub Pages sau khi đổi tên repository.
-- Kiểm tra thời gian phản hồi đầu tiên của Render sau thời gian không sử dụng.
+## Lưu ý vận hành
+Phòng online được lưu trong RAM của backend và tự hết hạn sau 45 phút không hoạt động. Khi Render restart hoặc deploy lại, các phòng đang mở sẽ mất.

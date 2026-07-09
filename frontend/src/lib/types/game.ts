@@ -29,6 +29,7 @@ export interface Cell {
 
 export interface GameCreateRequest {
 	timeControl?: TimeControl;
+	moveTimeLimit?: number;
 	gameMode?: GameMode;
 	difficulty?: DifficultyLevel;
 	redDifficulty?: DifficultyLevel;
@@ -42,10 +43,14 @@ export interface GameState {
 	isGameOver: boolean;
 	redTimeRemaining: number;
 	blueTimeRemaining: number;
+	turnTimeRemaining?: number;
 	winner?: Player;
 	timeControl?: string;
 	initialTime?: number;
 	increment?: number;
+	moveTimeLimit?: number;
+	clockRunning?: boolean;
+	timeoutReason?: 'move' | 'total' | '';
 	gameMode?: GameMode;
 	redDifficulty?: number;
 	blueDifficulty?: number;

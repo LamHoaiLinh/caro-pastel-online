@@ -26,8 +26,9 @@ var (
 )
 
 type CreateOnlineRequest struct {
-	TimeControl string `json:"timeControl"`
-	PlayerName  string `json:"playerName"`
+	TimeControl   string `json:"timeControl"`
+	MoveTimeLimit int    `json:"moveTimeLimit"`
+	PlayerName    string `json:"playerName"`
 }
 
 type JoinOnlineRequest struct {
@@ -85,7 +86,7 @@ func (s *OnlineRoomStore) Get(code string) (*OnlineRoom, bool) {
 	return room, ok
 }
 
-func (s *OnlineRoomStore) Create(timeControl, playerName string, activeGameCount func() int) (*OnlineRoom, error) {
+func (s *OnlineRoomStore) Create(timeControl string, moveTimeLimit int, playerName string, activeGameCount func() int) (*OnlineRoom, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if len(s.rooms) >= maxOnlineRooms {
@@ -105,10 +106,15 @@ func (s *OnlineRoomStore) Create(timeControl, playerName string, activeGameCount
 	}
 
 	canonical, initialTimeMs, incrementSeconds := parseTimeControl(timeControl)
+	session := NewGameSession(canonical, initialTimeMs, incrementSeconds, domain.GameModePvP, nil, nil, nil, activeGameCount)
+	session.SetMoveTimeLimit(normalizeMoveTimeLimit(moveTimeLimit, canonical))
+	// An online room is only a waiting room until player 2 joins. Neither the
+	// total clock nor the per-move clock may run during that waiting period.
+	session.PauseClock()
 	now := time.Now()
 	room := &OnlineRoom{
 		code:         code,
-		session:      NewGameSession(canonical, initialTimeMs, incrementSeconds, domain.GameModePvP, nil, nil, nil, activeGameCount),
+		session:      session,
 		redToken:     newPlayerToken(),
 		redName:      cleanPlayerName(playerName, "Người chơi 1"),
 		createdAt:    now,
@@ -171,7 +177,8 @@ func (r *OnlineRoom) join(name, existingToken string) (role, token string) {
 	if r.blueToken == "" {
 		r.blueToken = newPlayerToken()
 		r.blueName = cleanPlayerName(name, "Người chơi 2")
-		r.session.ResetTurnClock()
+		// Start both clocks exactly when the second player successfully joins.
+		r.session.StartClock()
 		return "blue", r.blueToken
 	}
 	return "spectator", ""
@@ -245,7 +252,7 @@ func (h *Handler) CreateOnlineRoom(w http.ResponseWriter, req *http.Request) {
 		writeJSON(w, http.StatusBadRequest, ErrorResponse{Error: "bad_request", Message: "Dữ liệu tạo phòng không hợp lệ"})
 		return
 	}
-	room, err := h.rooms.Create(body.TimeControl, body.PlayerName, func() int {
+	room, err := h.rooms.Create(body.TimeControl, body.MoveTimeLimit, body.PlayerName, func() int {
 		return h.store.ActiveGameCount() + h.rooms.Count()
 	})
 	if err != nil {
@@ -371,4 +378,28 @@ func parseTimeControl(value string) (string, int64, int) {
 	default:
 		return "7+5", 420_000, 5
 	}
+}
+
+func normalizeMoveTimeLimit(requested int, timeControl string) int {
+	if requested <= 0 {
+		switch timeControl {
+		case "1+0":
+			return 10
+		case "3+0", "3+2":
+			return 20
+		case "10+0":
+			return 45
+		case "15+10":
+			return 60
+		default:
+			return 30
+		}
+	}
+	if requested < 5 {
+		return 5
+	}
+	if requested > 300 {
+		return 300
+	}
+	return requested
 }

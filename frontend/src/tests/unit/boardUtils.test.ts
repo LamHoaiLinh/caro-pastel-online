@@ -118,7 +118,7 @@ describe('boardUtils', () => {
   describe('computeCellSize', () => {
     it('should compute cell size for a typical mobile viewport', () => {
       const size = computeCellSize(375);
-      expect(size).toBe(Math.floor((375 * 0.95) / 16));
+      expect(size).toBe(Math.floor(375 / (16 + 1.08)));
     });
 
     it('should cap at maxCellSize on large viewports', () => {
@@ -128,7 +128,7 @@ describe('boardUtils', () => {
 
     it('should not go below minCellSize', () => {
       const size = computeCellSize(100);
-      expect(size).toBe(18);
+      expect(size).toBe(14);
     });
 
     it('should return maxCellSize on wide viewports', () => {
